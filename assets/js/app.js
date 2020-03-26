@@ -4,111 +4,135 @@
  * XXD = DIAMONDS (DIAMANTES)
  * XXS = SPADES (ESPADAS)
  */
-const NEWGAME = document.querySelector('#newGame');
-const REQUESTC = document.querySelector('#requestC');
-const STOP = document.querySelector('#stop');
-const PLAYERSMALL = document.querySelectorAll('small')[0];
-const PCSMALL = document.querySelectorAll('small')[1];
-const PLAYERCARDS = document.querySelector('#player-cards');
-const PCCARDS = document.querySelector('#computer-cards');
-let deck = [];
-const types = ['C', 'D', 'H', 'S']; //tipos de cartas
-const figures = ['A', 'J', 'Q', 'K']; //figuras existentes
-let playerPoints = 0;
-let pcPoints = 0;
-const createDeck = () => { //se crea una baraja
 
-    for (let i = 2; i <= 10; i++) //creamos las cartas numericas
-        for (let type of types)
-            deck.push(`${i}${type}`);
+//patron modulo
+/**
+ * nos otorga una capa extra de seguridad ya nuestras variables
+ * solo existen en el scope del modulo, por lo que no pueden ser
+ * accedidas directamente del navegador
+ * */
+const ModuleBlackjack = (() => { //funcion anonima autoinvocada
+    'use strict' //modo estricto
 
-    for (let type of types) //creamos las figuras
-        for (let figure of figures)
-            deck.push(`${figure}${type}`)
+    //declaracion de componentes
+    const NEWGAME = document.querySelector('#newGame'),
+        REQUESTC = document.querySelector('#requestC'),
+        STOP = document.querySelector('#stop'),
+        PLAYERSSMALL = document.querySelectorAll('small'),
+        PLAYERCARDS = document.querySelector('#player-cards'),
+        PCCARDS = document.querySelector('#computer-cards');
 
-    deck = _.shuffle(deck); //revolvemos deck
-
-    return deck; //regresamos deck
-};
-
-const requestCard = () => { //pedir una carta 
-    if (deck.length === 0) {
-        throw 'No hay cartas en el deck';
-    }
-    const card = deck.pop();
-
-    return card;
-}
-
-const cardValue = (card) => {
-    const value = card.substring(0, card.length - 1);
-    return (isNaN(value)) ? ((value === 'A') ? 11 : 10)
-        : (parseInt(value));
+    //declaracion de cartas
+    const types = ['C', 'D', 'H', 'S'], //tipos de cartas
+        figures = ['A', 'J', 'Q', 'K']; //figuras existentes
 
 
-}
-const createCardIMG = (card) => {
-    const cardImg = document.createElement('img');
-    cardImg.src = `assets/cards/${card}.png`;
-    cardImg.classList.add('cards');
-    return cardImg
-}
-const reset = () => {
-    playerPoints = 0;
-    pcPoints = 0;
-    PLAYERSMALL.innerHTML = playerPoints;
-    PCSMALL.innerHTML = pcPoints;
-    PCCARDS.innerHTML = "";
-    PLAYERCARDS.innerHTML = "";
-    deck = [];
-    createDeck();
-    REQUESTC.disabled = false;
-    STOP.disabled = false;
-    NEWGAME.disabled = false;
-}
+    //declaracion de variables
+    let deck = [],
+        playersPoints = [];//ultimo valor es la computadora
 
-const endGame = () => {
-    REQUESTC.disabled = true;
-    STOP.disabled = true;
-    if (playerPoints === pcPoints) {
-        console.warn('Empate!!!');
-    } else if (playerPoints > 21) {
-        console.warn('perdiste!!!');
-    } else if (pcPoints > 21) {
-        console.warn('Ganaste!!');
-    } else if (pcPoints > playerPoints) {
-        console.warn('perdiste!!!');
-    }
+    //declaracion de funciones
 
-}
-const computerTurn = (minimalPoints) => {
-    do {
-        const card = requestCard();
-        pcPoints += cardValue(card);
-        PCCARDS.append(createCardIMG(card));
-        PCSMALL.innerHTML = pcPoints;
-        if (minimalPoints > 21) {
-            break;
+    const begin = (numPlayers = 2) => {
+        deck = createDeck();
+        playersPoints=[];
+        for (let i = 0; i < numPlayers; i++){
+            playersPoints.push(0);
+            PLAYERSSMALL[i].innerHTML =playersPoints[i];
         }
-    } while ((pcPoints <= minimalPoints) && (pcPoints <= 21));
-    endGame();
+        PCCARDS.innerHTML = "";
+        PLAYERCARDS.innerHTML = "";
+        REQUESTC.disabled = false;
+        STOP.disabled = false;
+        NEWGAME.disabled = false;
+    }
+    const createDeck = () => { //se crea una baraja
+        deck = [];
+        for (let i = 2; i <= 10; i++) //creamos las cartas numericas
+            for (let type of types)
+                deck.push(`${i}${type}`);
 
-}
-REQUESTC.addEventListener('click', () => {
-    const card = requestCard();
-    playerPoints += cardValue(card);
-    PLAYERCARDS.append(createCardIMG(card));
-    PLAYERSMALL.innerHTML = playerPoints;
-    if (playerPoints > 21) {
-        computerTurn();
+        for (let type of types) //creamos las figuras
+            for (let figure of figures)
+                deck.push(`${figure}${type}`)
+        return _.shuffle(deck);//regresamos deck revuelto
+    };
+
+    const requestCard = () => { //pedir una carta 
+        if (deck.length === 0) {
+            throw 'No hay cartas en el deck';
+        }
+        return deck.pop();
     }
 
-});
-NEWGAME.addEventListener('click', reset);
+    const cardValue = (card) => {
+        console.log(card)
+        const value = card.substring(0, card.length - 1);
+        return (isNaN(value)) ? ((value === 'A') ? 11 : 10)
+            : (parseInt(value));
+    }
 
-STOP.addEventListener('click', () => {
-    computerTurn(playerPoints);
+    const createCardIMG = (card) => {
+        const cardImg = document.createElement('img');
+        cardImg.src = `assets/cards/${card}.png`;
+        cardImg.classList.add('cards');
+        return cardImg;
+    }
+    const endGame = () => {
+        REQUESTC.disabled = true;
+        STOP.disabled = true;
+        if (playersPoints[0] === playersPoints[playersPoints.length-1]) {
+            console.warn('Empate!!!');
+        } else if (playersPoints[0] > 21) {
+            console.warn('perdiste!!!');
+        } else if (playersPoints[playersPoints.length-1] > 21) {
+            console.warn('Ganaste!!');
+        } else if (playersPoints[playersPoints.length-1] > playersPoints[0]) {
+            console.warn('perdiste!!!');
+        }
 
-})
+    }
+    //Turn: 0 primer jugador turn: n computadora
+    const getPoints = (turn, card) => {
+        playersPoints[turn] += cardValue(card);
+        console.log(playersPoints[turn]);
+        return  playersPoints[turn];
+    }
+    const computerTurn = (minimalPoints) => {
+        do {
+            const card = requestCard();
+            getPoints(playersPoints.length - 1,card);
+            PCCARDS.append(createCardIMG(card));
+            PLAYERSSMALL[PLAYERSSMALL.length-1].innerHTML = playersPoints[playersPoints.length-1];
+            if (minimalPoints > 21) {
+                break;
+            }
+        } while ((playersPoints[playersPoints.length-1] <= minimalPoints) && (playersPoints[playersPoints.length-1] <= 21));
+        endGame();
 
-createDeck();
+    }
+    REQUESTC.addEventListener('click', () => {
+        const card = requestCard();
+        console.log(card);
+        const playerPoints = getPoints(0, card);
+        PLAYERCARDS.append(createCardIMG(card));
+        PLAYERSSMALL[0].innerHTML = parseInt(playersPoints);
+        if (playerPoints > 21) {
+            computerTurn();
+        }
+
+    });
+    NEWGAME.addEventListener('click', ()=>{
+        begin();
+    });
+
+    STOP.addEventListener('click', () => {
+        computerTurn(playersPoints[0]);
+
+    })
+    return {
+        newGame: begin,
+    };
+
+})();
+
